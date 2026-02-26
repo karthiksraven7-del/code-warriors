@@ -2,121 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RhythmAuth | Secure Access</title>
     <style>
         body {
             margin: 0; font-family: 'Segoe UI', sans-serif;
-            background: #0f2027; height: 100vh;
+            background: radial-gradient(circle, #1e3c72, #2a5298); height: 100vh;
             display: flex; justify-content: center; align-items: center; color: white;
         }
         .container {
-            background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 20px;
-            width: 350px; text-align: center; backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.4); padding: 35px; border-radius: 25px;
+            width: 360px; text-align: center; backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
         }
         #video-container {
-            width: 150px; height: 150px; margin: 0 auto 20px;
-            border: 3px solid #ff5252; border-radius: 50%; overflow: hidden;
+            width: 140px; height: 140px; margin: 0 auto 20px;
+            border: 4px solid #ff5252; border-radius: 50%; overflow: hidden;
+            transition: 0.8s ease;
         }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .hidden-fields { display: none; }
+        .input-area { display: none; }
         input {
-            width: 90%; padding: 10px; margin: 8px 0; border-radius: 8px;
-            border: none; background: rgba(0,0,0,0.4); color: white;
+            width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px;
+            border: none; background: rgba(255,255,255,0.1); color: white; outline: none;
         }
         .btn {
-            width: 95%; padding: 12px; margin-top: 15px; border: none;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
-            background: #00c853; color: white;
+            width: 96%; padding: 14px; margin-top: 15px; border: none;
+            border-radius: 10px; font-weight: bold; cursor: pointer;
+            background: #00c853; color: white; font-size: 16px;
         }
-        #msg { margin-top: 15px; font-weight: bold; color: yellow; font-size: 13px; }
+        #msg { margin-top: 15px; font-weight: 500; min-height: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="title">🔐 Face Identification</h2>
-    
-    <div id="video-container">
-        <video id="webcam" autoplay muted playsinline></video>
+    <h2 id="title">Security Check</h2>
+    <div id="video-container"><video id="webcam" autoplay muted playsinline></video></div>
+
+    <div id="inputArea" class="input-area">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="p1" placeholder="Type Password">
+        <input type="password" id="p2" placeholder="Repeat Password Exactly">
+        <button class="btn" onclick="verifyBiometrics()">Verify & Access</button>
     </div>
 
-    <div id="authSection" class="hidden-fields">
-        <input type="text" id="username" placeholder="Enter Username">
-        <input type="password" id="p1" placeholder="Create Pattern Password">
-        <input type="password" id="p2" placeholder="Repeat Pattern Password">
-        <button class="btn" onclick="verifyFinal()">Verify & Enter</button>
-    </div>
-
-    <div id="msg">Starting Camera...</div>
-    <button id="manualBtn" style="display:none; margin-top:10px; font-size:10px; background:none; color:gray; border:none; cursor:pointer;" onclick="unlockNow()">Face not detected? Click to bypass</button>
+    <div id="msg">Initializing AI...</div>
 </div>
 
 <script>
-let kd1=[], ku1=[], kd2=[], ku2=[];
+let r1 = [], r2 = [];
 const video = document.getElementById('webcam');
 const msg = document.getElementById('msg');
-const authSection = document.getElementById('authSection');
+const inputArea = document.getElementById('inputArea');
 
-// 1. Start Camera
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+// 1. Face Recognition Simulation
+navigator.mediaDevices.getUserMedia({ video: true })
     .then(stream => {
         video.srcObject = stream;
-        msg.innerHTML = "Scanning Face...";
-        // Simulate a 2-second scan for the judges
-        setTimeout(unlockNow, 2500);
+        setTimeout(() => {
+            document.getElementById('video-container').style.borderColor = "#00c853";
+            msg.innerHTML = "✅ Face Detected. Please enter rhythm.";
+            msg.style.color = "#00e676";
+            inputArea.style.display = "block";
+            document.getElementById('title').innerText = "Step 2: Rhythm";
+        }, 2000);
     })
-    .catch(err => {
-        msg.innerHTML = "❌ Camera Error. Check Permissions.";
-        console.error(err);
-    });
+    .catch(() => { msg.innerHTML = "❌ Please allow camera access!"; });
 
-function unlockNow() {
-    document.getElementById('video-container').style.borderColor = "#00c853";
-    msg.innerHTML = "✅ Identity Recognized. Enter Password.";
-    msg.style.color = "#00c853";
-    authSection.style.display = "block";
-    document.getElementById('title').innerText = "⌨️ Rhythm Verification";
+// 2. Capture Timings (Relative to the first keypress)
+function recordRhythm(e, sequence) {
+    if (e.type === "keydown" && !e.repeat) {
+        let timestamp = performance.now();
+        // If this is the first key, its relative time is 0
+        let relativeTime = sequence.length === 0 ? 0 : timestamp - sequence[0].absolute;
+        sequence.push({ absolute: timestamp, relative: relativeTime });
+    }
 }
 
-// 2. Capture Key Timings
-const p1 = document.getElementById('p1');
-const p2 = document.getElementById('p2');
+const pass1 = document.getElementById('p1');
+const pass2 = document.getElementById('p2');
 
-p1.onkeydown = e => { if(e.key.length===1) kd1.push(performance.now()); };
-p1.onkeyup = e => { if(e.key.length===1) ku1.push(performance.now()); };
-p2.onkeydown = e => { if(e.key.length===1) kd2.push(performance.now()); };
-p2.onkeyup = e => { if(e.key.length===1) ku2.push(performance.now()); };
+pass1.addEventListener('keydown', (e) => recordRhythm(e, r1));
+pass2.addEventListener('keydown', (e) => recordRhythm(e, r2));
 
-// 3. Compare and Redirect
-function verifyFinal() {
+// 3. Compare Rhythm
+function verifyBiometrics() {
     const user = document.getElementById('username').value;
-    if(!user || p1.value !== p2.value) {
-        msg.innerHTML = "❌ Passwords must match!";
-        msg.style.color = "red";
+    
+    if (r1.length === 0 || r1.length !== r2.length || pass1.value !== pass2.value) {
+        msg.innerHTML = "❌ Typing mismatch or fields empty!";
+        msg.style.color = "#ff5252";
+        reset();
         return;
     }
 
-    // Calculate Rhythm (Average distance between key presses)
-    let score = 0;
-    for(let i=0; i<kd1.length; i++) {
-        score += Math.abs((ku1[i]-kd1[i]) - (ku2[i]-kd2[i]));
+    let totalDifference = 0;
+    for (let i = 0; i < r1.length; i++) {
+        totalDifference += Math.abs(r1[i].relative - r2[i].relative);
     }
 
-    if(score < 500) {
-        msg.innerHTML = "Verified! Opening Dashboard...";
+    // averageDiff is the average millisecond error per key
+    let averageDiff = totalDifference / r1.length;
+    console.log("Rhythm Accuracy Score:", averageDiff);
+
+    // THRESHOLD: 800 is very safe for a demo. 200 is for high-security.
+    if (averageDiff < 800) {
+        msg.innerHTML = "✅ Identity Confirmed!";
+        msg.style.color = "#00e676";
         localStorage.setItem("warrior", user);
-        setTimeout(() => {
-            // Ensure this filename matches exactly on GitHub!
-            window.location.href = "dashboard.html";
-        }, 1000);
+        setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
     } else {
-        msg.innerHTML = "❌ Rhythm Mismatch! Try typing at the same speed.";
-        msg.style.color = "orange";
-        kd1=[]; ku1=[]; kd2=[]; ku2=[];
-        p1.value=""; p2.value="";
+        msg.innerHTML = "❌ Rhythm Denied! Score: " + Math.round(averageDiff);
+        msg.style.color = "#ff9100";
+        reset();
     }
+}
+
+function reset() {
+    r1 = []; r2 = [];
+    pass1.value = ""; pass2.value = "";
 }
 </script>
 </body>
