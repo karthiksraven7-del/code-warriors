@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RhythmAuth + FaceID | Lite</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tracking.js/1.1.3/tracking-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tracking.js/1.1.3/data/face-min.js"></script>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: #0f2027;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 20px;
+        width: 380px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    #video-container {
+        position: relative;
+        width: 200px;
+        height: 150px;
+        margin: 0 auto 15px;
+        border: 3px solid #00c853;
+        border-radius: 10px;
+        background: #000;
+    }
+
+    video { width: 100%; height: 100%; object-fit: cover; }
+
+    input {
+        width: 85%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 5px;
+        border: none;
+    }
+
+    button {
+        width: 90%;
+        padding: 12px;
+        margin-top: 15px;
+        background: #00c853;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #message { margin-top: 15px; font-weight: bold; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🔐 RhythmAuth Lite</h2>
+    
+    <div id="video-container">
+        <video id="video" preload autoplay loop muted></video>
+    </div>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password1" placeholder="Password">
+    <input type="password" id="password2" placeholder="Confirm Password">
+
+    <button onclick="checkAuth()">Verify & Access</button>
+
+    <div id="message">System Ready</div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const msg = document.getElementById("message");
+const videoContainer = document.getElementById('video-container');
+let faceDetected = false;
+
+// Initialize Tracker
+const tracker = new tracking.ObjectTracker('face');
+tracker.setInitialScale(4);
+tracker.setStepSize(2);
+tracker.setEdgesDensity(0.1);
+
+// Start Camera properly
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+        video.srcObject = stream;
+        video.play();
+        // Start tracking ONLY after video starts
+        tracking.track('#video', tracker);
+        msg.innerHTML = "📷 Camera Online - Look at the Screen";
+    })
+    .catch(function(err) {
+        msg.innerHTML = "❌ Camera Blocked! Allow permissions.";
+        console.error("Camera Error:", err);
+    });
+
+tracker.on('track', function(event) {
+    if (event.data.length === 0) {
+        faceDetected = false;
+        videoContainer.style.borderColor = "red";
+    } else {
+        faceDetected = true;
+        videoContainer.style.borderColor = "#00c853";
+        // Optional: Show a small success message when face is first seen
+        if(msg.innerHTML.includes("Camera Online")) {
+             msg.innerHTML = "✅ Face Detected! Enter Password.";
+             // --- THE CONNECTION ---
+        setTimeout(() => { 
+            window.location.href = "dashboard.html"; 
+        }, 1200);
+        }
+    }
+});
+</script>
+</body>
+</html>
